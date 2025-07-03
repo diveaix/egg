@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Eggception Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: black;
+      overflow: hidden;
+    }
+
+    .egg-img {
+      width: 200px;
+      height: auto;
+      position: absolute;
+      transform-origin: center;
+    }
+
+    .egg-img:hover {
+      cursor: pointer;
+    }
+
+    .glow-click {
+      box-shadow: 0 0 20px 10px rgba(0, 170, 255, 0.3);
+      border-radius: 50%;
+    }
+
+    #eggMessage {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 20px;
+      color: white;
+      font-weight: bold;
+      padding: 10px 20px;
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 1px solid #fff3;
+      border-radius: 12px;
+      cursor: pointer;
+      display: none;
+      transition: 0.3s ease;
+      z-index: 10;
+    }
+
+    #eggMessage:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    #ostrichReveal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 300px;
+      height: auto;
+      display: none;
+      z-index: 20;
+      border: 3px solid white;
+      border-radius: 20px;
+      box-shadow: 0 0 60px 20px rgba(255, 255, 255, 0.4);
+    }
+  </style>
+</head>
+<body>
+
+<!-- Hidden Message & Ostrich Image -->
+<div id="eggMessage">Click here to know egg</div>
+<img id="ostrichReveal" src="assets/ostrich.webp" alt="The Egg Truth">
+
+<script>
+  let eggCount = 0;
+  let eggBreakCount = 0;
+  let gameOver = false;
+
+  const MAX_EGGS = 50;
+  const eggWidth = 200;
+  const eggHeight = 250;
+  const ostrichImage = document.getElementById("ostrichReveal");
+  const messageBox = document.getElementById("eggMessage");
+
+  function spawnEgg(x, y) {
+    if (eggCount >= MAX_EGGS) return;
+
+    const egg = document.createElement("img");
+    egg.src = "assets/whole.png";
+    egg.classList.add("egg-img");
+    egg.style.left = x + "px";
+    egg.style.top = y + "px";
+    egg.style.opacity = 0;
+
+    const clicksToCrack = Math.floor(Math.random() * 4) + 7; // 7–10
+    let currentClicks = 0;
+    let clicked = false;
+
+    document.body.appendChild(egg);
+    gsap.to(egg, { opacity: 1, duration: 0.5 });
+
+    egg.addEventListener("click", () => {
+      if (clicked || gameOver) return; // 🚫 Stop clicks if game over
+
+      // Animate click
+      gsap.to(egg, {
+        scale: 0.85,
+        rotation: Math.random() > 0.5 ? 8 : -8,
+        duration: 0.08,
+        yoyo: true,
+        repeat: 1,
+        ease: "power2.inOut"
+      });
+
+      egg.classList.add("glow-click");
+      setTimeout(() => egg.classList.remove("glow-click"), 100);
+
+      currentClicks++;
+
+      if (currentClicks >= clicksToCrack) {
+        clicked = true;
+        egg.src = "assets/cracked.png";
+        egg.style.zIndex = -1;
+
+        eggBreakCount++;
+
+        // ✋ Stop gameplay and show message after 5 breaks
+        if (eggBreakCount === 5) {
+          gameOver = true;
+          messageBox.style.display = "block";
+          gsap.fromTo(messageBox, { opacity: 0 }, { opacity: 1, duration: 0.5 });
+        }
+
+        // Spawn next egg if still playing
+        if (!gameOver) {
+          let offsetX = Math.random() * 200 - 100;
+          let offsetY = Math.random() * 150 + 100;
+          let newX = x + offsetX;
+          let newY = y + offsetY;
+
+          // Clamp to screen
+          newX = Math.max(0, Math.min(newX, window.innerWidth - eggWidth));
+          newY = Math.max(0, Math.min(newY, window.innerHeight - eggHeight));
+
+          spawnEgg(newX, newY);
+        }
+
+        setTimeout(() => {
+          gsap.to(egg, {
+            opacity: 0,
+            duration: 0.6,
+            onComplete: () => egg.remove()
+          });
+        }, 600);
+      }
+    });
+
+    eggCount++;
+  }
+
+  // Start with center egg
+  window.onload = () => {
+    const centerX = window.innerWidth / 2 - eggWidth / 2;
+    const centerY = window.innerHeight / 2 - eggHeight / 2;
+    spawnEgg(centerX, centerY);
+  };
+
+  // Reveal ostrich
+  messageBox.addEventListener("click", () => {
+    ostrichImage.style.display = "block";
+    gsap.fromTo(ostrichImage, { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.6, ease: "power3.out" });
+    messageBox.style.display = "none";
+  });
+</script>
+
+</body>
+</html>
